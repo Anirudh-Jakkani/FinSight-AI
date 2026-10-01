@@ -137,9 +137,36 @@ def _call_ai(prompt: str) -> str:
 
     try:
         payload = response.json()
-        text = payload["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, ValueError) as exc:
+    except ValueError as exc:
         raise AIAssistantError("AI provider returned an unexpected response format.") from exc
+
+    # OpenRouter sometimes reports an upstream failure — e.g. the free-tier
+    # provider this app uses being temporarily overloaded — as an "error"
+    # object inside an HTTP 200 body instead of a non-200 status (confirmed
+    # directly against this model/provider; mirrors app/services/chat.py's
+    # identical fix). Left unhandled, the next block's KeyError on the
+    # missing "choices" key surfaced as the misleading "unexpected response
+    # format", hiding what was actually a transient, retry-able problem.
+    error = payload.get("error")
+    if error:
+        message = error.get("message", "unknown error") if isinstance(error, dict) else str(error)
+        raise AIAssistantError(f"AI provider error: {message}")
+
+    try:
+        content = payload["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise AIAssistantError("AI provider returned an unexpected response format.") from exc
+
+    # Some models/providers OpenRouter proxies return content as a list of
+    # parts (e.g. [{"type": "text", "text": "..."}]) rather than a plain
+    # string — support both shapes rather than assuming only the one this
+    # app has observed so far.
+    if isinstance(content, list):
+        text = "".join(
+            part.get("text", "") for part in content if isinstance(part, dict) and part.get("type") == "text"
+        )
+    else:
+        text = content
 
     if not text or not text.strip():
         raise AIAssistantError("AI provider returned an empty response.")
