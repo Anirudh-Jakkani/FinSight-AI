@@ -1,4 +1,7 @@
-# Phase 1: PostgreSQL only. The API is added in the Dockerization phase.
+# Phase 8.8: API service added (the "Dockerization phase" this file originally
+# pointed at). Intended for local/staging parity testing and as a deployment
+# reference — see docs/deployment.md for production guidance (secrets, CORS,
+# the single-process rate-limiter constraint, etc).
 services:
   db:
     image: postgres:16
@@ -8,5 +11,28 @@ services:
       POSTGRES_DB: finsight
     ports: ["5432:5432"]
     volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finsight -d finsight"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    env_file: backend/.env
+    environment:
+      # Overrides backend/.env's DATABASE_URL (which points at localhost, correct
+      # for a backend running natively on the host) — inside this compose network
+      # the database is reachable at the service name "db", not localhost.
+      DATABASE_URL: postgresql+psycopg2://finsight:finsight@db:5432/finsight
+    ports: ["8000:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Lets a model trained via POST /api/v1/ml/train survive `docker compose
+      # restart`/recreate instead of vanishing with the container's filesystem.
+      - ./backend/app/ml/models:/app/app/ml/models
+
 volumes:
   pgdata:

@@ -21,4 +21,5 @@ flowchart TD
 ```
 
 Key rule: numbers are computed in Python/SQL; the LLM only explains verified results.
-Status: Phase 1 (scaffold). Only `/health` and `/health/db` exist.
+Status: through Phase 8.8 — all layers above are implemented; see `docs/deployment.md`
+for how the API is packaged and run in production.

@@ -1,0 +1,22 @@
+# Phase 8.8: keep the build context (and therefore the image) to source + metadata
+# only — mirrors the project root .gitignore's reasoning for the same paths.
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Secrets never enter the image; real config is injected at container runtime via
+# environment variables (see docs/deployment.md).
+.env
+.env.*
+!.env.example
+
+# Trained ML artifact: build output, not source (app/ml/predict.py already handles
+# it being absent — see ModelNotTrainedError — so the image is valid without it;
+# train it via POST /api/v1/ml/train after deploying, same as local dev).
+app/ml/models/*.joblib
+
+# Not needed to run the server
+tests/
+.pytest_cache/

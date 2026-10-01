@@ -1,0 +1,8 @@
+# Phase 8.8: Docker images always run on Linux regardless of the host OS used for
+# development. This repo is developed on Windows, where core.autocrlf=true rewrites
+# LF to CRLF in the working directory on checkout — a CRLF shebang line breaks the
+# interpreter inside a Linux container ("/bin/sh^M: bad interpreter"). Force these
+# to stay LF on every platform so `docker build` (which reads the working directory,
+# not the git blob) never sees CRLF here.
+*.sh text eol=lf
+Dockerfile text eol=lf
