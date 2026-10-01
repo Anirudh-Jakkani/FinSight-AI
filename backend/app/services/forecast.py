@@ -21,17 +21,22 @@ MIN_MONTHS_FOR_TREND = 3
 MAX_PERIODS_AHEAD = 6
 
 
-def _get_monthly_expenses(db: Session, *, user_id: int) -> list[tuple[str, Decimal]]:
+def _get_monthly_expenses(
+    db: Session, *, user_id: int, account_id: int | None = None
+) -> list[tuple[str, Decimal]]:
     period_expr = func.to_char(Transaction.transaction_date, "YYYY-MM")
     expense_expr = func.coalesce(
         func.sum(case((Transaction.transaction_type == TransactionType.DEBIT, Transaction.amount), else_=0)), 0
     )
-    rows = db.execute(
-        select(period_expr.label("period"), expense_expr)
-        .where(Transaction.user_id == user_id)
-        .group_by(period_expr)
-        .order_by(period_expr)
-    ).all()
+    stmt = select(period_expr.label("period"), expense_expr).where(Transaction.user_id == user_id)
+    # Same ownership-scoping pattern as app/services/analytics.py's _scope(): user_id
+    # is the real security boundary and is always applied; account_id (if given) only
+    # narrows within what the caller already owns, same as every other analytics
+    # endpoint — a foreign account_id yields an empty/insufficient-data result here
+    # too, never another user's data.
+    if account_id is not None:
+        stmt = stmt.where(Transaction.account_id == account_id)
+    rows = db.execute(stmt.group_by(period_expr).order_by(period_expr)).all()
     return [(period, Decimal(expenses)) for period, expenses in rows]
 
 
@@ -74,9 +79,11 @@ def _linear_regression(y: list[float]) -> tuple[float, float, float]:
     return slope, intercept, r_squared
 
 
-def forecast_expenses(db: Session, *, user_id: int, periods_ahead: int = 1) -> ForecastResult:
+def forecast_expenses(
+    db: Session, *, user_id: int, periods_ahead: int = 1, account_id: int | None = None
+) -> ForecastResult:
     periods_ahead = max(1, min(periods_ahead, MAX_PERIODS_AHEAD))
-    history = _get_monthly_expenses(db, user_id=user_id)
+    history = _get_monthly_expenses(db, user_id=user_id, account_id=account_id)
     periods = [p for p, _ in history]
     expenses = [e for _, e in history]
 

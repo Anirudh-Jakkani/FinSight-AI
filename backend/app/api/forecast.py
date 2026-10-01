@@ -16,10 +16,13 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["forecast"])
 @router.get("/forecast/expenses", response_model=ExpenseForecastResponse)
 def forecast_expenses_endpoint(
     periods_ahead: int = Query(1, ge=1, le=6),
+    account_id: int | None = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ExpenseForecastResponse:
-    result = forecast_expenses(db, user_id=current_user.id, periods_ahead=periods_ahead)
+    result = forecast_expenses(
+        db, user_id=current_user.id, periods_ahead=periods_ahead, account_id=account_id
+    )
     return ExpenseForecastResponse(
         method=result.method,
         historical_periods=result.historical_periods,
