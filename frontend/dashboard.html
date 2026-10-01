@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="auth-checking">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FinSight AI — Dashboard</title>
+<link rel="stylesheet" href="css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">FS</div>
+      <div class="brand-text">
+        <h1>FinSight AI</h1>
+        <p>Financial analytics</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#overview" class="nav-item"><span class="nav-icon">◧</span>Overview</a>
+      <a href="#insights" class="nav-item"><span class="nav-icon">◨</span>Insights</a>
+      <a href="#transactions" class="nav-item"><span class="nav-icon">☰</span>Transactions</a>
+      <a href="#ask-finsight" class="nav-item nav-item-accent"><span class="nav-icon">✦</span>Ask FinSight</a>
+      <a href="#tools" class="nav-item"><span class="nav-icon">⚙</span>Import &amp; tools</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="account-status" id="account-status"><!-- filled by main.js: logged-in email + Log out, or Log in / Sign up --></div>
+      <div class="sidebar-fields">
+        <div class="field-inline">
+          <label for="account-id-input">Acct</label>
+          <input id="account-id-input" type="number" value="2" min="1" />
+        </div>
+      </div>
+      <button class="btn btn-block" id="reload-btn">⟳ Reload data</button>
+      <div class="sidebar-footer-row">
+        <span class="status-pill" id="db-status"><span class="status-dot" id="db-dot"></span><span id="db-status-text">checking…</span></span>
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme">◐</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ Main content ============ -->
+  <main class="app-main">
+    <div class="app-main-inner">
+
+      <header class="content-header" id="overview">
+        <div class="section-eyebrow">Overview</div>
+        <h2 class="content-title">Financial overview</h2>
+        <p class="content-subtitle">Understand where your money goes — grounded entirely in verified calculations. Not financial advice.</p>
+      </header>
+
+      <!-- Hero + supporting KPIs -->
+      <section class="grid hero-kpi">
+        <div class="card hero-card">
+          <span class="stat-label">Net savings</span>
+          <span class="hero-figure" id="stat-savings">—</span>
+          <span class="stat-delta" id="stat-savings-delta"></span>
+        </div>
+        <div class="kpi-stack">
+          <div class="card stat-tile stat-tile-sm">
+            <span class="stat-label">Total income</span>
+            <span class="stat-value" id="stat-income">—</span>
+            <span class="stat-delta" id="stat-income-delta"></span>
+          </div>
+          <div class="card stat-tile stat-tile-sm">
+            <span class="stat-label">Total expenses</span>
+            <span class="stat-value" id="stat-expenses">—</span>
+            <span class="stat-delta" id="stat-expenses-delta"></span>
+          </div>
+          <div class="card stat-tile stat-tile-sm">
+            <span class="stat-label">Savings rate</span>
+            <span class="stat-value" id="stat-rate">—</span>
+            <span class="stat-delta flat" id="stat-rate-sub"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Small AI insight teaser (full analysis lives in Ask FinSight below) -->
+      <div class="card ai-insight-strip">
+        <div class="ai-insight-icon">✦</div>
+        <div class="ai-insight-content">
+          <div class="ai-insight-label">AI insight</div>
+          <div id="overview-insight-text">Click refresh for a quick AI-powered read on your finances.</div>
+        </div>
+        <a href="#ask-finsight" class="ai-insight-link">Full analysis →</a>
+        <button class="btn btn-sm" id="overview-insight-btn">Refresh</button>
+      </div>
+
+      <!-- Charts -->
+      <section class="section-block" id="insights">
+        <div class="section-eyebrow">Insights</div>
+
+        <div class="grid charts-row">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Income vs. expenses</div>
+                <div class="card-subtitle">Monthly, with next-period forecast</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-canvas-wrap"><canvas id="trend-chart"></canvas></div>
+              <div class="legend-row" id="trend-legend"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Spending by category</div>
+                <div class="card-subtitle" id="category-subtitle">Share of total expenses</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-canvas-wrap"><canvas id="category-chart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid mid-row">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Top merchants</div>
+                <div class="card-subtitle">By total spend</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-canvas-wrap short"><canvas id="merchants-chart"></canvas></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Expense forecast</div>
+                <div class="card-subtitle" id="forecast-method">—</div>
+              </div>
+            </div>
+            <div class="card-body" id="forecast-body">
+              <div class="skeleton">Loading…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid mid-row">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Recurring payments</div>
+                <div class="card-subtitle">Detected monthly bills &amp; subscriptions</div>
+              </div>
+              <button class="btn btn-sm" id="detect-recurring-btn">Detect</button>
+            </div>
+            <div class="card-body">
+              <div class="item-list" id="recurring-list"><div class="skeleton">Loading…</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Anomalies</div>
+                <div class="card-subtitle">Unusual transactions vs. their category norm</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="item-list" id="anomalies-list"><div class="skeleton">Loading…</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transactions -->
+      <section class="section-block" id="transactions">
+        <div class="section-eyebrow">Ledger</div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Transactions</div>
+              <div class="card-subtitle" id="txn-count-subtitle">—</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-toolbar">
+              <select id="filter-category"><option value="">All categories</option></select>
+              <select id="filter-type">
+                <option value="">All types</option>
+                <option value="DEBIT">Debit</option>
+                <option value="CREDIT">Credit</option>
+              </select>
+              <select id="filter-review">
+                <option value="">Needs review: any</option>
+                <option value="true">Needs review: yes</option>
+                <option value="false">Needs review: no</option>
+              </select>
+              <input type="date" id="filter-date-from" title="From date" />
+              <input type="date" id="filter-date-to" title="To date" />
+              <button class="btn btn-sm" id="filter-apply-btn">Filter</button>
+              <button class="btn btn-sm" id="filter-clear-btn">Clear</button>
+            </div>
+            <div class="table-scroll">
+              <table class="txn-table">
+                <thead>
+                  <tr>
+                    <th>Date</th><th>Description</th><th>Merchant</th><th>Category</th>
+                    <th>Amount</th><th>Type</th><th>Review</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="txn-tbody">
+                  <tr><td colspan="8" class="skeleton">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span id="pagination-summary">—</span>
+              <div>
+                <button class="btn btn-sm" id="prev-page-btn">← Prev</button>
+                <button class="btn btn-sm" id="next-page-btn">Next →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ask FinSight — premium AI section -->
+      <section class="section-block" id="ask-finsight">
+        <div class="section-eyebrow">AI analyst</div>
+        <div class="card ask-finsight-card">
+          <div class="ask-finsight-header">
+            <div class="ask-finsight-icon">✦</div>
+            <div>
+              <div class="ask-finsight-title">Ask FinSight</div>
+              <div class="card-subtitle">Answers are grounded only in the verified data above — it never invents figures</div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="ai-summary-btn">Generate summary</button>
+          </div>
+
+          <div class="ask-finsight-body">
+            <div id="ai-summary-body"></div>
+
+            <div class="chat-panel">
+              <div class="chat-window" id="chat-window">
+                <div class="chat-bubble assistant">Ask me anything about this data — e.g. "What's my biggest expense category?"</div>
+              </div>
+              <div class="chat-input-row">
+                <input type="text" id="chat-input" placeholder="Ask a question…" />
+                <button class="btn btn-primary btn-sm" id="chat-send-btn">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Import & tools -->
+      <section class="section-block" id="tools">
+        <div class="section-eyebrow">Data</div>
+        <div class="grid mid-row">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Import transactions</div>
+                <div class="card-subtitle">Runs the full automated pipeline (Phase 5): ingest → clean → categorize → ML</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <label class="upload-drop" id="upload-drop">
+                <input type="file" id="csv-input" accept=".csv" />
+                <span id="upload-label">Click to choose a CSV, or drag one here</span>
+              </label>
+              <div class="upload-controls-row">
+                <div class="field-inline">
+                  <label for="currency-input">Currency</label>
+                  <input id="currency-input" type="text" value="INR" style="width:52px" />
+                </div>
+                <button class="btn btn-primary btn-sm" id="run-pipeline-btn">Run pipeline</button>
+              </div>
+              <div class="pipeline-result" id="pipeline-result"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Data &amp; tools</div>
+                <div class="card-subtitle">Maintenance actions over the existing data</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="tools-grid">
+                <button class="btn btn-sm" id="tool-snapshots">Generate snapshots</button>
+                <button class="btn btn-sm" id="tool-train-ml">Train ML model</button>
+                <button class="btn btn-sm" id="tool-apply-ml">Apply ML to low-confidence</button>
+                <button class="btn btn-sm" id="tool-clean">Clean merchants</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <div class="app-footer-row">
+          <span>FinSight AI — educational personal-finance analytics. Not financial advice.</span>
+          <span>Static HTML/CSS/JS + Chart.js, talking only to the REST API.</span>
+        </div>
+        <nav class="footer-links">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms &amp; Conditions</a>
+          <a href="disclaimer.html">Disclaimer</a>
+        </nav>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<div id="toast-root"></div>
+
+<script src="js/api.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

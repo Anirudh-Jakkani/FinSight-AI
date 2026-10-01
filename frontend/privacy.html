@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — FinSight AI</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="legal-page">
+  <a href="dashboard.html" class="legal-back">← Back to dashboard</a>
+  <h1>Privacy Policy</h1>
+  <p class="legal-updated">FinSight AI is a self-hosted, single-instance educational project — there is no company collecting your data.</p>
+
+  <section>
+    <h2>Where your data lives</h2>
+    <p>
+      All transaction, account, and analytics data is stored in a PostgreSQL database that you run
+      yourself, locally. Nothing is uploaded to a hosted FinSight service — there isn't one. The
+      static dashboard talks only to the FastAPI backend running on your own machine.
+    </p>
+  </section>
+
+  <section>
+    <h2>No accounts, no authentication</h2>
+    <p>
+      This project does not implement login or authentication. A "User ID" is a plain numeric
+      identifier used to scope queries, not a real account — do not deploy this as-is anywhere
+      that isn't fully trusted, since any caller who can reach the API can pass any user ID.
+    </p>
+  </section>
+
+  <section>
+    <h2>Third-party AI processing</h2>
+    <p>
+      The "Ask FinSight" summary and chat features are the one place this application sends your
+      data outside your own machine: your verified financial figures (income, expenses, category
+      breakdowns, recurring payments, anomalies, forecasts, and — for chat — recent transactions)
+      are sent to a third-party large language model via OpenRouter, so it can narrate them in
+      plain language. That provider's own privacy policy governs how they handle that request. If
+      you don't want this, simply don't use the AI summary or chat features — every other part of
+      the dashboard works without them.
+    </p>
+  </section>
+
+  <section>
+    <h2>No tracking or analytics</h2>
+    <p>
+      The frontend loads no analytics, advertising, or tracking scripts. The only external network
+      request it makes, besides your own backend, is loading the Chart.js library from a public
+      CDN and (when you use it) the AI features described above.
+    </p>
+  </section>
+
+  <section>
+    <h2>Browser storage</h2>
+    <p>
+      Your theme preference (light/dark) is saved in your browser's <code>localStorage</code> so it
+      persists between visits. Nothing else is stored client-side.
+    </p>
+  </section>
+
+  <footer class="app-footer">
+    <div class="app-footer-row">
+      <span>FinSight AI — educational personal-finance analytics. Not financial advice.</span>
+    </div>
+    <nav class="footer-links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <a href="disclaimer.html">Disclaimer</a>
+    </nav>
+  </footer>
+</div>
+</body>
+</html>

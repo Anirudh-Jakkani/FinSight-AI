@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FinSight AI — Understand where your money goes</title>
+<meta name="description" content="Educational personal-finance analytics: automated categorization, spending analytics, recurring and anomaly detection, forecasting, and an AI analyst grounded in verified calculations." />
+<link rel="stylesheet" href="css/style.css" />
+<script>
+  // Already signed in? Skip the marketing page and go straight to the dashboard.
+  // Presence-only check (fast, synchronous, no flash) — if the token has actually
+  // expired, dashboard.html's own gate (which verifies server-side) will catch
+  // that and bounce to login.html anyway.
+  if (localStorage.getItem("finsight-token")) {
+    window.location.href = "dashboard.html";
+  }
+</script>
+</head>
+<body>
+<div class="landing">
+
+  <header class="landing-nav">
+    <div class="brand">
+      <div class="brand-mark">FS</div>
+      <span class="brand-wordmark">FinSight AI</span>
+    </div>
+    <nav class="landing-nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+    </nav>
+    <div class="landing-nav-actions">
+      <a href="login.html" class="btn">Log in</a>
+      <a href="signup.html" class="btn btn-primary">Sign up free</a>
+    </div>
+  </header>
+
+  <!-- ============ Hero ============ -->
+  <section class="landing-hero">
+    <div class="landing-hero-badge">✦ Grounded in verified calculations, not guesses</div>
+    <h1 class="landing-hero-title">Understand where<br />your money goes.</h1>
+    <p class="landing-hero-subtitle">
+      Import a bank statement, get it automatically cleaned and categorized, see your spending,
+      recurring bills, and unusual transactions at a glance — then ask an AI analyst questions
+      about your own finances, answered only from numbers your own data already verified.
+    </p>
+    <div class="landing-hero-actions">
+      <a href="signup.html" class="btn btn-primary landing-cta">Get started free</a>
+      <a href="login.html" class="btn landing-cta">Log in</a>
+    </div>
+    <p class="landing-hero-note">Educational analytics. Not financial advice.</p>
+  </section>
+
+  <!-- ============ Feature grid ============ -->
+  <section class="landing-section" id="features">
+    <div class="section-eyebrow" style="text-align:center">Features</div>
+    <h2 class="landing-section-title">Everything from raw CSV to clear answers</h2>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⟳</div>
+        <h3>One-click pipeline</h3>
+        <p>Upload a CSV and one call ingests, deduplicates, cleans merchant names, categorizes, and applies ML fallbacks — end to end.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◨</div>
+        <h3>Smart categorization</h3>
+        <p>Deterministic keyword rules handle the obvious cases with high confidence; a TF-IDF classifier steps in only where the rules genuinely aren't sure.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Analytics &amp; forecasting</h3>
+        <p>Income, expenses, savings rate, monthly trends, and a transparent linear-trend expense forecast — every number traceable back to your transactions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚠</div>
+        <h3>Recurring &amp; anomaly detection</h3>
+        <p>Automatically finds your real monthly bills and subscriptions, and flags transactions that are statistical outliers for their category.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✦</div>
+        <h3>Ask FinSight</h3>
+        <p>Chat with an AI analyst about your own data. It's instructed to use only the verified figures it's handed — never to invent a number.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Private by account</h3>
+        <p>Every request is tied to your signed-in session — your transactions, chats, and analytics are never visible to any other account.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ How it works ============ -->
+  <section class="landing-section" id="how-it-works">
+    <div class="section-eyebrow" style="text-align:center">How it works</div>
+    <h2 class="landing-section-title">Three steps to clarity</h2>
+
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Create your account</h3>
+        <p>Sign up in seconds — you get your own private workspace with its own primary account.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Import your statement</h3>
+        <p>Drop in a CSV. The automated pipeline cleans, categorizes, and flags it for you immediately.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>See it, ask it</h3>
+        <p>Browse your dashboard, or just ask Ask FinSight in plain language — grounded in your real numbers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Final CTA ============ -->
+  <section class="landing-cta-banner">
+    <h2>Ready to see where your money actually goes?</h2>
+    <a href="signup.html" class="btn btn-primary landing-cta">Create your free account</a>
+  </section>
+
+  <footer class="app-footer landing-footer">
+    <div class="app-footer-row">
+      <span>FinSight AI — educational personal-finance analytics. Not financial advice.</span>
+      <span>Static HTML/CSS/JS + Chart.js, talking only to the REST API.</span>
+    </div>
+    <nav class="footer-links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <a href="disclaimer.html">Disclaimer</a>
+    </nav>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Secrets / environment config — real values live only in backend/.env (never committed)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Trained ML artifacts (build output, not source)
+backend/app/ml/models/*.joblib
+
+# User-uploaded files
+uploads/
+
+# Databases / dumps — this project uses an external PostgreSQL instance, never a
+# committed file, but guard against one ending up here by accident
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql
+
+# Editor/IDE
+.vscode/
+.idea/

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sign up — FinSight AI</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="auth-page">
+  <div class="card auth-card">
+    <div class="auth-brand"><div class="brand-mark">FS</div></div>
+    <h1 class="auth-title">Create your account</h1>
+    <p class="auth-subtitle">Get a fresh FinSight AI workspace with its own primary account</p>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <form id="signup-form">
+      <div class="auth-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required minlength="8" autocomplete="new-password" />
+        <div class="auth-hint">At least 8 characters.</div>
+      </div>
+      <div class="auth-field">
+        <label for="confirm-password">Confirm password</label>
+        <input type="password" id="confirm-password" required autocomplete="new-password" />
+      </div>
+      <div class="auth-field">
+        <label for="currency">Default currency</label>
+        <input type="text" id="currency" value="INR" maxlength="3" style="text-transform:uppercase" />
+        <div class="auth-hint">Used for your new "Primary" account.</div>
+      </div>
+      <button type="submit" class="btn btn-primary auth-submit" id="submit-btn">Create account</button>
+    </form>
+
+    <p class="auth-footer-link">Already have an account? <a href="login.html">Log in</a></p>
+    <p class="auth-footer-link"><a href="index.html">← Back to home</a></p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  if (localStorage.getItem("finsight-token")) {
+    window.location.href = "dashboard.html";
+  }
+
+  const form = document.getElementById("signup-form");
+  const errorBox = document.getElementById("auth-error");
+  const submitBtn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove("visible");
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirm-password").value;
+    const currency = document.getElementById("currency").value.trim() || "INR";
+
+    if (password !== confirmPassword) {
+      errorBox.textContent = "Passwords do not match.";
+      errorBox.classList.add("visible");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account…";
+    try {
+      const res = await Api.signup(email, password, currency);
+      localStorage.setItem("finsight-token", res.access_token);
+      localStorage.setItem("finsight-user-id", String(res.user_id));
+      localStorage.setItem("finsight-account-id", String(res.account_id));
+      localStorage.setItem("finsight-email", res.email);
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      errorBox.textContent = err.message || "Signup failed";
+      errorBox.classList.add("visible");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create account";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Log in — FinSight AI</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="auth-page">
+  <div class="card auth-card">
+    <div class="auth-brand"><div class="brand-mark">FS</div></div>
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-subtitle">Log in to FinSight AI</p>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <form id="login-form">
+      <div class="auth-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-primary auth-submit" id="submit-btn">Log in</button>
+    </form>
+
+    <p class="auth-footer-link">Don't have an account? <a href="signup.html">Sign up</a></p>
+    <p class="auth-footer-link"><a href="index.html">← Back to home</a></p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  // Already have a session? skip straight to the dashboard.
+  if (localStorage.getItem("finsight-token")) {
+    window.location.href = "dashboard.html";
+  }
+
+  const form = document.getElementById("login-form");
+  const errorBox = document.getElementById("auth-error");
+  const submitBtn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove("visible");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Logging in…";
+    try {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const res = await Api.login(email, password);
+      localStorage.setItem("finsight-token", res.access_token);
+      localStorage.setItem("finsight-user-id", String(res.user_id));
+      localStorage.setItem("finsight-email", res.email);
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      errorBox.textContent = err.message || "Login failed";
+      errorBox.classList.add("visible");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Log in";
+    }
+  });
+</script>
+</body>
+</html>
