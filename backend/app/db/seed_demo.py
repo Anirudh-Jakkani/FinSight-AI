@@ -1,10 +1,25 @@
 """Idempotent demo-seed command for a production deployment (Render): creates the
 existing demo user/account (locally: user id 2, phase22-test@example.com, account
 "Test Checking") and imports the verified 90-row sample dataset into it — through
-the exact same migrations -> ingestion -> merchant-cleaning -> rule/ML-categorization
-pipeline a real upload goes through. Nothing here reimplements that logic: it's a
-thin driver over already-tested services, same pattern as app/db/init_db.py and
-app/services/pipeline.py's run_pipeline (Phase 5), which this calls directly.
+the exact same migrations -> ingestion -> merchant-cleaning -> rule-categorization ->
+ML-categorization steps a real upload goes through (app/services/pipeline.py's
+run_pipeline, Phase 5, sequences these same four calls; this calls each of them
+directly instead of going through that wrapper, solely so a missing ML model can be
+trained at the right point in between rule-categorization and ML-categorization —
+see seed_demo()). Nothing here reimplements any of that logic: every step is the
+same already-tested service function the API routes and run_pipeline itself call.
+
+If app/ml/models/category_classifier.joblib doesn't exist yet (a fresh deployment:
+that file is never committed — see .gitignore/.dockerignore — and is only ever
+produced by training), this trains it via app/ml/train.py's train_classifier
+(Phase 4.4, the same function POST /api/v1/ml/train calls — global, not scoped to
+the demo user, exactly like that endpoint) on whatever labeled transactions already
+exist at that point, which after rule-categorization includes the demo dataset.
+Training only ever reads transactions and writes the model file — "nothing here
+writes back to the transactions table" per that module's own docstring — so this
+cannot modify transaction data. Once trained, a rerun finds the file already exists
+and skips straight to using it, same as the fresh-deploy case always did from the
+second run onward.
 
 Safe to run against any database, any number of times, without duplicating anything:
 - Migrations: `alembic upgrade head` is a no-op once already current (Phase 8.7).
@@ -44,11 +59,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
+from app.ml.train import MODEL_PATH, train_classifier
 from app.models.account import Account
 from app.models.user import User
 from app.services.auth import hash_password
-from app.services.pipeline import run_pipeline
-from app.services.transaction_ingestion import IngestionError
+from app.services.categorization import categorize_transactions
+from app.services.cleaning import clean_merchants
+from app.services.ml_categorization import apply_ml_categorization
+from app.services.transaction_ingestion import IngestionError, ingest_csv
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +123,7 @@ def seed_demo() -> None:
 
         file_bytes = DEMO_CSV_PATH.read_bytes()
         try:
-            result = run_pipeline(
+            ingestion = ingest_csv(
                 db,
                 file_bytes=file_bytes,
                 filename=DEMO_CSV_FILENAME,
@@ -116,17 +134,29 @@ def seed_demo() -> None:
         except IngestionError as exc:
             raise SystemExit(f"seed_demo: pipeline failed: {exc}") from exc
 
+        merchants_cleaned = clean_merchants(db, user_id=user.id)
+        rows_categorized = categorize_transactions(db, user_id=user.id)
+
+        # Train only if there's no model yet — a rerun finds the file already
+        # exists and skips straight to applying it, same as any other idempotent
+        # step here. See module docstring for why this can't modify transactions.
+        if not MODEL_PATH.exists():
+            training = train_classifier(db)
+            print(f"ML training:  {training.message}")
+
+        ml_apply = apply_ml_categorization(db, user_id=user.id)
+
         print(f"Demo user:    id={user.id} email={user.email}")
         print(f"Demo account: id={account.id} name={account.name!r} currency={account.currency}")
         print(
-            f"Ingestion:    {result.ingestion.rows_processed} rows processed, "
-            f"{result.ingestion.inserted} inserted, "
-            f"{result.ingestion.skipped_duplicates} already present (skipped), "
-            f"{result.ingestion.failed} failed"
+            f"Ingestion:    {ingestion.rows_processed} rows processed, "
+            f"{ingestion.inserted} inserted, "
+            f"{ingestion.skipped_duplicates} already present (skipped), "
+            f"{ingestion.failed} failed"
         )
-        print(f"Cleaning:     {result.merchants_cleaned.updated} merchant(s) cleaned")
-        print(f"Rules:        {result.rows_categorized} row(s) categorized")
-        print(f"ML:           {result.ml_apply.message}")
+        print(f"Cleaning:     {merchants_cleaned.updated} merchant(s) cleaned")
+        print(f"Rules:        {rows_categorized} row(s) categorized")
+        print(f"ML:           {ml_apply.message}")
     finally:
         db.close()
 
