@@ -119,14 +119,6 @@ pandas, scikit-learn, bcrypt, PyJWT, slowapi (rate limiting)
 **Infrastructure** — Docker, Render (Blueprint-based deployment: API + static
 frontend + managed PostgreSQL), GitHub
 
-## Screenshots
-
-> _Screenshots coming soon — add images under `docs/screenshots/` and reference
-> them here (e.g. `![Dashboard](docs/screenshots/dashboard.png)`)._
-
-| Dashboard | Ask FinSight | Import & Categorize |
-|---|---|---|
-| _add screenshot_ | _add screenshot_ | _add screenshot_ |
 
 ## Getting Started (GitHub Setup)
 
