@@ -17,23 +17,25 @@ limiter, etc.) see `docs/deployment.md` first — everything there still applies
 4. Click Apply. Render builds the Docker image, provisions Postgres, and publishes
    the static site.
 
-## Required manual step after the first deploy
+## Live URLs
 
-`render.yaml` can't know your services' final `*.onrender.com` names in advance —
-those names are globally unique across all of Render, so if `finsight-api` or
-`finsight-frontend` is already taken, Render assigns a different one (e.g.
-`finsight-api-ab12`). Two places in `render.yaml` hardcode the placeholder names and
-**must be updated to match what Render actually assigned**, via Render's dashboard
-(Environment tab / Redirects & Rewrites tab — editing there is equivalent to
-editing the file and redeploying) or by editing `render.yaml` and pushing again:
+Render assigns `*.onrender.com` names at creation time (they're globally unique
+across all of Render, so the literal names in this file aren't guaranteed free —
+`finsight-api` and `finsight-frontend` were both already taken when this was first
+deployed). The actual assigned hostnames are:
 
-- `finsight-api`'s `CORS_ALLOWED_ORIGINS` env var → the frontend's real URL.
-- `finsight-frontend`'s three `routes` → each `destination`'s host → the backend's
-  real URL.
+- API: `https://finsight-api-pfqj.onrender.com`
+- Frontend: `https://finsight-frontend-6gts.onrender.com`
 
-Until this is corrected, the frontend's rewrite proxy will 404 (wrong backend host)
-even though both services deployed successfully — if API calls fail right after a
-first deploy, check this first.
+`render.yaml` is already updated to match: `finsight-api`'s `CORS_ALLOWED_ORIGINS`
+points at the frontend URL, and `finsight-frontend`'s three `routes` destinations
+point at the API URL. **If either service is ever deleted and recreated** (not a
+normal redeploy — pushing to the connected branch redeploys in place and keeps the
+same hostname), Render may assign a different hostname, and both spots above need
+updating again to match — via the dashboard (Environment tab / Redirects & Rewrites
+tab) or by editing `render.yaml` and pushing. Symptom if this ever drifts: the
+frontend's rewrite proxy 404s (wrong backend host) even though both services show
+as deployed successfully.
 
 ## Why the frontend needs no code changes
 

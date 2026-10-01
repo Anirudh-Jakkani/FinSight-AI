@@ -1,8 +1,12 @@
 # Phase 8.9: Render Blueprint — deploys all three pieces (API, static frontend,
 # PostgreSQL) from one file via "New > Blueprint" in the Render dashboard.
-# See docs/render-deployment.md for the required one-time manual steps (this file
-# alone is not enough: two placeholder URLs below must be corrected after the first
-# deploy, and sync:false secrets need values typed in).
+# See docs/render-deployment.md for one remaining manual step this file can't do
+# (sync:false secrets need values typed in). The CORS/rewrite URLs below are the
+# actual assigned hostnames for this deployment:
+#   API:      https://finsight-api-pfqj.onrender.com
+#   Frontend: https://finsight-frontend-6gts.onrender.com
+# If either service is ever recreated under a new name, Render may assign a
+# different hostname — update both spots below (and re-push) to match again.
 #
 # Free-tier notes: finsight-api spins down after 15 min idle (first request after
 # that is slow — Render has to boot the container) and finsight-db expires after 30
@@ -29,11 +33,8 @@ services:
         value: HS256
       - key: JWT_EXPIRE_MINUTES
         value: "1440"
-      # Placeholder — must match finsight-frontend's actual assigned URL (its
-      # onrender.com name may differ from the one below if "finsight-frontend" is
-      # already taken). See docs/render-deployment.md.
       - key: CORS_ALLOWED_ORIGINS
-        value: https://finsight-frontend.onrender.com
+        value: https://finsight-frontend-6gts.onrender.com
       # External credential Render can't generate — set manually in the dashboard
       # after import (sync:false means "never store this in the blueprint file").
       - key: OPENROUTER_API_KEY
@@ -55,18 +56,15 @@ services:
       # js/api.js) keep working unmodified against a backend on a different
       # Render origin — Render rewrites these server-side, so the browser never
       # sees a cross-origin request and CORS doesn't even come into play for them.
-      #
-      # Placeholder — must match finsight-api's actual assigned URL, same caveat
-      # as CORS_ALLOWED_ORIGINS above.
       - type: rewrite
         source: /api/*
-        destination: https://finsight-api.onrender.com/api/*
+        destination: https://finsight-api-pfqj.onrender.com/api/*
       - type: rewrite
         source: /health
-        destination: https://finsight-api.onrender.com/health
+        destination: https://finsight-api-pfqj.onrender.com/health
       - type: rewrite
         source: /health/*
-        destination: https://finsight-api.onrender.com/health/*
+        destination: https://finsight-api-pfqj.onrender.com/health/*
 
 databases:
   - name: finsight-db
