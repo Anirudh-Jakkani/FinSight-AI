@@ -40,8 +40,8 @@ All read from `backend/app/config.py`; set these as real environment variables
 
 ## Server: one process, by design
 
-The container's `CMD` is a single `uvicorn` process — no `--workers`, no Gunicorn.
-This is deliberate, not a placeholder: `app/rate_limit.py`'s limiter (slowapi) keeps
+The container's default command is a single `uvicorn` process — no `--workers`, no
+Gunicorn. This is deliberate, not a placeholder: `app/rate_limit.py`'s limiter (slowapi) keeps
 its counters in-memory, scoped to one process. Running multiple workers or
 replicas, each with its own independent counters, would silently weaken the
 auth/AI/upload rate limits the Phase 8.5 audit added, without changing any visible
@@ -68,6 +68,18 @@ container filesystem, a trained model is lost on restart or redeploy and must be
 retrained. `docker-compose.yml` mounts `backend/app/ml/models/` as a volume so this
 isn't an issue for local/staging compose use; a real deployment should do the
 same (or retrain as a post-deploy step) if this feature is used.
+
+## Demo data
+
+`backend/app/db/seed_demo.py` (`python -m app.db.seed_demo`) creates the demo
+account and imports the verified 90-row sample dataset through the real ingestion
+pipeline — idempotent, safe to run any number of times against any database
+without duplicating anything. `docker-entrypoint.sh` forwards any command it's
+given (after running migrations) instead of always starting the server, so this
+image can run that command directly: `docker compose run --rm api python -m
+app.db.seed_demo`, or `docker run --rm --env DATABASE_URL=... <image> python -m
+app.db.seed_demo`. See `docs/render-deployment.md` for how to run it against a
+specific platform's deployed instance when there's no shell access.
 
 ## Frontend
 

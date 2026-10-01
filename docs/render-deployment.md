@@ -58,6 +58,51 @@ bare `postgresql://`) to `postgresql+psycopg2://` before anything else sees it, 
 `fromDatabase`'s generated value just works with no manual edits. Covered by
 `backend/tests/test_config.py`.
 
+## Seeding the demo account
+
+`backend/app/db/seed_demo.py` creates the existing demo user/account (locally:
+`phase22-test@example.com`, account "Test Checking") and imports the verified
+90-row sample dataset into it, through the real migrations → ingestion →
+merchant-cleaning → rule/ML-categorization pipeline (`app/services/pipeline.py`'s
+`run_pipeline` — nothing reimplemented). It's idempotent and strictly additive: safe
+to run once, safe to run again (0 rows the second time), and — proven while building
+this — safe to run against a database that already has this exact data, including
+this project's own local dev database, without duplicating or altering anything
+there. See the module's own docstring and `backend/tests/test_seed_demo.py` for the
+detail; **the command below only ever needs to be run against Render's database**,
+not locally.
+
+```
+python -m app.db.seed_demo
+```
+
+**`finsight-api` is on the free compute plan**, which does not support Render's
+Shell tab or the Jobs API/CLI (both require a paid plan) — so the way to run this is
+to temporarily override the container's command, not open a shell:
+
+1. Render dashboard → `finsight-api` → **Settings** → **Advanced** → **Docker
+   Command** → set it to `python -m app.db.seed_demo` → Save (triggers a redeploy).
+2. Open the **Logs** tab and watch for this container's output — it prints what it
+   did (user/account id, rows inserted vs. already-present, categorization counts)
+   and then the container exits, since it isn't launching the server this time.
+   `docker-entrypoint.sh` still runs `alembic upgrade head` first either way.
+3. **Clear the Docker Command field back to empty** and Save again — this redeploys
+   with the default command (`docker-entrypoint.sh`'s own `exec uvicorn ...`) so the
+   service goes back to actually serving traffic. Until you do this, the service
+   has no running web process.
+
+If `finsight-api` is ever upgraded to a paid plan, Render's one-off Jobs (`render
+jobs create <serviceID> --start-command "python -m app.db.seed_demo"`, or the
+equivalent `POST /v1/services/<serviceID>/jobs` API call) is a cleaner alternative —
+it doesn't touch the live service's running command at all, so there's no step 3.
+
+By default the demo user has no password (same as any user created before Phase
+7.1: its data is there, it just can't log in until one is set) — nothing is ever
+hardcoded. To make the demo account loggable-into from the frontend, set
+**`DEMO_USER_PASSWORD`** as a real environment variable on `finsight-api` (dashboard
+→ Environment tab, not `render.yaml`, so it's never committed) *before* running the
+seed command — it's read once, only when the user doesn't already exist.
+
 ## Everything from docs/deployment.md still applies
 
 Same single-process constraint (Render's free plan only ever runs one instance
