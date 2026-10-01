@@ -3,6 +3,10 @@
 Packaging and server configuration for running the backend in production. The
 application itself is unchanged by this phase — this only covers how to run it.
 
+Deploying specifically to Render? See `docs/render-deployment.md` (Phase 8.9) for a
+one-file Blueprint that provisions the API, frontend, and database together —
+everything below still applies there too.
+
 ## Image
 
 `backend/Dockerfile` builds a single self-contained image: Python deps, the app

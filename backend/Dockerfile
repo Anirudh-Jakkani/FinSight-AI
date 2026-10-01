@@ -38,7 +38,11 @@ EXPOSE 8000
 # Matches the app's own /health endpoint (app/main.py) — reports process liveness
 # only, not DB connectivity (that's /health/db, deliberately not used here: an
 # orchestrator restarting this container on a transient DB outage would not help).
+#
+# Reads $PORT rather than the EXPOSEd 8000: Render (Phase 8.9) assigns its own PORT
+# (default 10000) that docker-entrypoint.sh binds uvicorn to, which would otherwise
+# leave this probing the wrong port and reporting unhealthy forever on that platform.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
+    CMD python -c "import os,urllib.request as u; u.urlopen('http://127.0.0.1:' + os.environ.get('PORT','8000') + '/health', timeout=3)" || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

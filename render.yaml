@@ -1,0 +1,75 @@
+# Phase 8.9: Render Blueprint — deploys all three pieces (API, static frontend,
+# PostgreSQL) from one file via "New > Blueprint" in the Render dashboard.
+# See docs/render-deployment.md for the required one-time manual steps (this file
+# alone is not enough: two placeholder URLs below must be corrected after the first
+# deploy, and sync:false secrets need values typed in).
+#
+# Free-tier notes: finsight-api spins down after 15 min idle (first request after
+# that is slow — Render has to boot the container) and finsight-db expires after 30
+# days. Fine for evaluating this project; upgrade `plan:` on both for anything
+# longer-lived. Free also means at most one instance, which happens to match
+# app/rate_limit.py's single-process requirement (see docs/deployment.md) for free
+# reasons rather than by this file's design.
+services:
+  - type: web
+    name: finsight-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: finsight-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "1440"
+      # Placeholder — must match finsight-frontend's actual assigned URL (its
+      # onrender.com name may differ from the one below if "finsight-frontend" is
+      # already taken). See docs/render-deployment.md.
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://finsight-frontend.onrender.com
+      # External credential Render can't generate — set manually in the dashboard
+      # after import (sync:false means "never store this in the blueprint file").
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: "nvidia/nemotron-3-ultra-550b-a55b:free"
+      - key: MAX_UPLOAD_MB
+        value: "10"
+      - key: LOG_LEVEL
+        value: INFO
+
+  - type: web
+    name: finsight-frontend
+    runtime: static
+    staticPublishPath: ./frontend
+    routes:
+      # Reproduces frontend/serve.py's local dev proxy (same PROXY_PREFIXES: /api/
+      # and /health) so the frontend's existing relative fetch() calls (frontend/
+      # js/api.js) keep working unmodified against a backend on a different
+      # Render origin — Render rewrites these server-side, so the browser never
+      # sees a cross-origin request and CORS doesn't even come into play for them.
+      #
+      # Placeholder — must match finsight-api's actual assigned URL, same caveat
+      # as CORS_ALLOWED_ORIGINS above.
+      - type: rewrite
+        source: /api/*
+        destination: https://finsight-api.onrender.com/api/*
+      - type: rewrite
+        source: /health
+        destination: https://finsight-api.onrender.com/health
+      - type: rewrite
+        source: /health/*
+        destination: https://finsight-api.onrender.com/health/*
+
+databases:
+  - name: finsight-db
+    databaseName: finsight
+    user: finsight
+    plan: free

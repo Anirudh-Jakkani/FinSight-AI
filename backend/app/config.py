@@ -1,4 +1,5 @@
 """Central settings, read from environment / .env. Secrets never live in code."""
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -6,6 +7,22 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+psycopg2://finsight:finsight@localhost:5432/finsight"
+
+    # Phase 8.9: Render (and Heroku-style platforms generally) hand out connection
+    # strings as postgres://... — SQLAlchemy has not recognized that bare "postgres"
+    # dialect name since 1.4 and raises NoSuchModuleError on it. A bare postgresql://
+    # (no driver suffix) would work today since psycopg2 is the only driver installed,
+    # but only by implicit default; normalizing it too makes the driver explicit
+    # rather than an accident of what else happens to be installed. Existing
+    # configuration already using postgresql+psycopg2:// (local .env, docker-compose)
+    # is untouched by this — it's a no-op for anything already in that form.
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_database_url(cls, v: str) -> str:
+        for scheme in ("postgres://", "postgresql://"):
+            if v.startswith(scheme):
+                return "postgresql+psycopg2://" + v[len(scheme):]
+        return v
     llm_provider: str = ""
     llm_api_key: str = ""   # never log or return this value
     llm_model: str = ""

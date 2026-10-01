@@ -5,7 +5,7 @@ Educational personal-finance analytics: import a bank statement, categorize tran
 view spending analytics, recurring payments, unusual spending and forecasts, and ask an AI
 analyst questions grounded in verified calculations. **Not financial advice.**
 
-**Status:** Through Phase 8.8 (production deployment config). See `docs/`.
+**Status:** Through Phase 8.9 (Render deployment). See `docs/`.
 
 ## Run locally
 ```bash
@@ -27,4 +27,5 @@ Open http://127.0.0.1:8000/docs and try `/health` and `/health/db`.
 docker compose up -d --build       # PostgreSQL + API
 ```
 See `docs/deployment.md` for required production environment variables and the
-rest of the deployment guide.
+rest of the deployment guide, or `docs/render-deployment.md` to deploy the whole
+app (API + frontend + database) to Render from `render.yaml` in one step.
