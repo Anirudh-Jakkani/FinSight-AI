@@ -9,9 +9,11 @@ caller can hit. The `request` parameter name was freed up for slowapi's
 required `Request` injection by renaming the body parameter to `payload`.
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.models.account import Account
 from app.models.user import User
 from app.rate_limit import limiter
 from app.schemas.auth import LoginRequest, SignupRequest, TokenResponse, UserOut
@@ -50,5 +52,19 @@ def login_endpoint(request: Request, payload: LoginRequest, db: Session = Depend
 
 
 @router.get("/me", response_model=UserOut)
-def me_endpoint(current_user: User = Depends(get_current_user)) -> User:
-    return current_user
+def me_endpoint(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> UserOut:
+    # The frontend's authoritative source for account_id (bug: it previously
+    # cached this in localStorage only at signup time — never set at all on
+    # login, and never re-validated against who's actually logged in — so a
+    # stale or absent value silently fell back to a hardcoded demo account id,
+    # breaking upload/pipeline for any other real account). Takes the first
+    # account by id: today's signup() gives every user exactly one.
+    account = db.execute(
+        select(Account).where(Account.user_id == current_user.id).order_by(Account.id)
+    ).scalars().first()
+    return UserOut(
+        id=current_user.id,
+        email=current_user.email,
+        created_at=current_user.created_at,
+        account_id=account.id if account else None,
+    )

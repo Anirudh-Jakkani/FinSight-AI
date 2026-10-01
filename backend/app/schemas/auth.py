@@ -46,3 +46,7 @@ class UserOut(BaseModel):
     id: int
     email: str
     created_at: datetime
+    # The frontend's single source of truth for which account to act on — see
+    # app/api/auth.py's me_endpoint. None only if a user somehow has no account
+    # yet, which shouldn't happen for anyone created via signup().
+    account_id: int | None = None

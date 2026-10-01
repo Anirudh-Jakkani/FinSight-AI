@@ -33,7 +33,10 @@
       <div class="sidebar-fields">
         <div class="field-inline">
           <label for="account-id-input">Acct</label>
-          <input id="account-id-input" type="number" value="2" min="1" />
+          <!-- No hardcoded default: main.js's enforceAuthGate() fills this from
+               /auth/me before any data loads, for whichever account the logged-in
+               user actually owns. -->
+          <input id="account-id-input" type="number" min="1" />
         </div>
       </div>
       <button class="btn btn-block" id="reload-btn">⟳ Reload data</button>

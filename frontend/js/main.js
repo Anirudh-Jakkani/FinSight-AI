@@ -11,7 +11,10 @@ const state = {
   // Phase 7.3: there is no user-id input anymore — the acting user is whoever
   // the stored JWT (see getSession()) says it is. accountId remains a plain
   // client-side filter (still always ANDed with the token's user server-side).
-  accountId: 2,
+  // Set for real during boot()'s enforceAuthGate(), from /auth/me — never
+  // hardcoded (a hardcoded fallback here was exactly the bug where a real
+  // user's upload/pipeline calls silently used a demo account they don't own).
+  accountId: null,
   txn: { limit: 10, offset: 0, total: 0, filters: {} },
   conversationId: null,
 };
@@ -587,7 +590,9 @@ function reloadAll() {
 }
 
 document.getElementById("reload-btn").addEventListener("click", () => {
-  state.accountId = Number(document.getElementById("account-id-input").value) || 2;
+  // Falls back to the current (server-verified) accountId, not a hardcoded
+  // demo id, if the field is cleared or holds garbage.
+  state.accountId = Number(document.getElementById("account-id-input").value) || state.accountId;
   state.txn.offset = 0;
   state.conversationId = null;
   reloadAll();
@@ -659,7 +664,19 @@ async function enforceAuthGate() {
     // Verify the token server-side rather than trusting localStorage presence
     // alone — an expired or tampered token must also bounce to login. Api.me()
     // reads the token from localStorage itself (same as every other call).
-    await Api.me();
+    //
+    // Also the fix for a real bug: account_id used to come only from
+    // localStorage, set once at signup and never set at all by login.html —
+    // a user who logged in (rather than just having signed up) had a missing
+    // or stale cached account_id, silently falling back to a hardcoded demo
+    // account id elsewhere in this file and breaking upload/pipeline with
+    // "account N does not belong to user M". /auth/me is the actual source of
+    // truth; re-synced here on every dashboard load, not just cached once.
+    const me = await Api.me();
+    if (me.account_id) {
+      localStorage.setItem("finsight-account-id", String(me.account_id));
+      state.accountId = me.account_id;
+    }
     return true;
   } catch (err) {
     clearSession();
